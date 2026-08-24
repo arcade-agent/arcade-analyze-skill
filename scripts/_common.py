@@ -88,7 +88,8 @@ def add_common_args(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--language", "-l", default=None,
-        help="Language: java, python, c, cpp, typescript. Auto-detected if omitted.",
+        help="Language: java, kotlin, python, c, cpp, typescript, javascript, "
+             "go, or multi. Auto-detected if omitted.",
     )
 
 

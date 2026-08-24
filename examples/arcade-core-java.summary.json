@@ -119,6 +119,6 @@
       "value": 0.2857
     }
   ],
-  "report_html": "/Users/lemduc/Desktop/side_project_workspace/arcade-analyze-skill/examples/arcade-core-java.html",
-  "report_mermaid": "/Users/lemduc/Desktop/side_project_workspace/arcade-analyze-skill/examples/arcade-core-java.md"
+  "report_html": "examples/arcade-core-java.html",
+  "report_mermaid": "examples/arcade-core-java.md"
 }

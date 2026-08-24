@@ -140,8 +140,19 @@ the latest version.
 
 ```bash
 git clone https://github.com/lemduc/arcade-analyze-skill.git
-ln -s "$(pwd)/arcade-analyze-skill" ~/.claude/skills/arcade-analyze
+ln -sfn "$(pwd)/arcade-analyze-skill" ~/.claude/skills/arcade-analyze
 ```
+
+Use `-sfn`, not plain `-s`. If a link is already there, `ln -s` creates a
+nested link *inside* the old target rather than repointing it — so a stale
+link survives silently and Claude Code never loads the skill. Re-run the
+`-sfn` form whenever you move the checkout, and verify with:
+
+```bash
+ls ~/.claude/skills/arcade-analyze/SKILL.md
+```
+
+If that errors, the link is dangling and the skill will not appear.
 
 ## Usage
 

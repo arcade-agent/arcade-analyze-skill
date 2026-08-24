@@ -72,6 +72,6 @@
       "value": 0.0
     }
   ],
-  "report_html": "/Users/lemduc/Desktop/side_project_workspace/arcade-analyze-skill/examples/arcade-agent-python.html",
-  "report_mermaid": "/Users/lemduc/Desktop/side_project_workspace/arcade-analyze-skill/examples/arcade-agent-python.md"
+  "report_html": "examples/arcade-agent-python.html",
+  "report_mermaid": "examples/arcade-agent-python.md"
 }
