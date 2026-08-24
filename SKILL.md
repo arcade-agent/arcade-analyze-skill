@@ -78,8 +78,9 @@ a working run.
 
 `<skill-dir>` is the directory containing this SKILL.md.
 
-Every script prints a `===ARCADE_SUMMARY_JSON===` … `===END_ARCADE_SUMMARY_JSON===`
-block to stdout. Parse that block for the structured result and relay it in chat;
+Every script except the MCP server (`guard_mcp.py`, which speaks MCP on stdio)
+prints a `===ARCADE_SUMMARY_JSON===` … `===END_ARCADE_SUMMARY_JSON===` block to
+stdout. Parse that block for the structured result and relay it in chat;
 don't try to scrape the human-readable lines.
 
 `<source>` is a local directory **or a git URL** — arcade-agent clones the URL
@@ -206,79 +207,22 @@ codebase don't re-parse — it's cheap to run several sub-commands in a row.
 
 ---
 
-## Architect workflows (5–10)
+## Architect workflows (5–12) — see `references/architect-workflows.md`
 
-These produce architect-grade deliverables. All take `<source>` + `--language`
-(and most `--algorithm`, `--source-root`); all print the summary JSON block.
+Eight more scripts producing architect-grade deliverables. Read that file before
+using any of them — it carries the options, the CI/rules setup, and the
+`visualizer.py` live-feedback loop. Route by what the user asks for:
 
-| # | Script | Produces | Reach for it when |
-|---|--------|----------|-------------------|
-| 5 | `summary_report.py` | Executive markdown: health score (0–100 + grade), top findings in plain English, recommended actions | The architect needs something to present — a review, a status doc, a non-technical audience |
-| 6 | `dsm.py` | Design Structure Matrix HTML (cyclic cells in red) | The system has many components (>~10) and a Mermaid diagram is unreadable |
-| 7 | `export_c4.py` | C4-PlantUML `.puml` + Structurizr `.dsl` | They want the architecture in their documentation toolchain |
-| 8 | `refactor_plan.py` | Ranked refactoring roadmap (severity × blast radius), quick wins vs big bets | "What should I actually do about these smells?" |
-| 9 | `validate.py` | Rule conformance + layered-architecture check; **exits 1 on violations** | They have architectural rules to enforce, or want a CI gate |
-| 10 | `analyze_system.py` | Multi-module/microservices view: per-module health + system dependency graph | The target is several modules/services, not one codebase |
-| 11 | `interactive_report.py` | **Explorable** HTML report: click a component (diagram node or chip) → side panel drills into its entities, dependencies, cohesion, API surface, and smells; dependency chips are clickable to walk the graph | They want to *explore* the architecture, not read a static report — the richer alternative to `analyze.py` |
-| 12 | `visualizer.py` | **App-style** SPA (offline, no CDN; dark/light toggle): sidebar views — pan/zoom component diagram with L1/L2 detail toggle and drill-down panel, weighted dependency list + DSM, smells presented as *failure-point cards* (severity, impact, mitigation, effort), a ranked **Architect Recommendations** roadmap (quick wins / planned / big bets), an **animated dependency-flow simulator** with per-hop waterfall (auto-derived traces + user-recorded ones), a Knowledge view with **balanced scores, principle signals, strengths/risks, and per-component quality** (cluster factor, intra-connectivity), and a feedback bar. With `--serve` it becomes a **live agent loop**: browser feedback is written to a JSON file on disk and the page auto-reloads whenever the model JSON changes | They want the full "architecture recovery workbench" experience — demos, walkthroughs, simulating how a change flows through components, or a live feedback loop with Claude |
-
-```bash
-"$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/summary_report.py"  <source> -l java -o summary.md
-"$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/interactive_report.py" <source> -l java
-"$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/visualizer.py"      <source> -l java
-"$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/dsm.py"             <source> -l java
-"$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/export_c4.py"       <source> -l java -o out/
-"$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/refactor_plan.py"   <source> -l java -o plan.md
-"$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/validate.py"        <source> -l java --rules .arcade-rules.json
-"$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/analyze_system.py"  <moduleA> <moduleB> <moduleC> -l java
-```
-
-**Rules & CI:** `validate.py` reads `.arcade-rules.json` (sample in
-`assets/arcade-rules.sample.json`; YAML works if PyYAML is installed). Rule types:
-`forbidden-dependency`, `no-cycles`, `metric-gate`, `max-fan-in`,
-`max-component-size`. For a PR gate, copy `assets/arch-gate.yml` to the target
-repo, or use `diff_versions.py --min-similarity / --max-new-smells` (both exit 1
-when breached).
-
-**Mapping requests to these workflows:**
-- "executive summary / health / how healthy / present to leadership" → `summary_report.py`
-- "dependency matrix / too many components to diagram / show the tangle" → `dsm.py`
-- "C4 / PlantUML / Structurizr / put it in our docs" → `export_c4.py`
-- "what should I fix / refactoring plan / prioritize the debt" → `refactor_plan.py`
-- "enforce rules / no cycles allowed / fail CI if / conformance / is it layered" → `validate.py`
-- "whole system / these microservices / multiple repos / cross-module deps" → `analyze_system.py`
-- "explore / interactive / clickable / let me drill into components / explorable report" → `interactive_report.py`
-- "visualizer / dashboard / app-like / simulate a flow / animate the architecture / failure points / demo I can present" → `visualizer.py`
-
-`visualizer.py` extras: `--dump-model model.json` saves the computed model, and
-`--from-model model.json` re-renders it without re-analyzing (works without
-arcade-agent — that is how `examples/arcade-visualizer-demo.html` is built, from
-`examples/visualizer-demo-model.json`). Custom simulation traces and feedback
-notes are stored in the viewer's browser (localStorage); "Copy for Claude" turns
-the collected feedback into a prompt to paste back into a Claude session.
-
-**Live mode (`--serve`)** — the two-way loop with an agent. Instead of writing a
-static file, serve the app on localhost:
-
-```bash
-"$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/visualizer.py" \
-  --from-model model.json --serve --port 8123          # or: <source> -l java --serve
-```
-
-Run it in the background. The startup output (and the emitted summary JSON)
-names two files:
-
-- **model JSON** — edit it (or regenerate it with `--dump-model`) and every open
-  browser tab reloads within ~2s. This is how you apply user feedback: change
-  the model, the view refreshes itself.
-- **feedback JSON** (`<model>-feedback.json`) — every note the user types in the
-  page's feedback bar is written here immediately. Poll or read this file to
-  pick up their requests; each entry has `text`, `when`, and the `view` it was
-  written from.
-
-`--feedback-out` overrides the feedback path; `--no-open` skips the browser.
-So the loop is: user annotates in the browser → you read the feedback JSON →
-you edit the model JSON → their page auto-reloads.
+| Ask sounds like | Script |
+|---|---|
+| "executive summary / health score / present to leadership" | `summary_report.py` |
+| "dependency matrix / too many components to diagram / show the tangle" | `dsm.py` |
+| "C4 / PlantUML / Structurizr / put it in our docs" | `export_c4.py` |
+| "what should I fix / prioritize the debt / refactoring plan" | `refactor_plan.py` |
+| "enforce rules / no cycles / fail CI if / conformance / is it layered" | `validate.py` (exits 1 on violations) |
+| "whole system / these microservices / multiple repos" | `analyze_system.py` |
+| "explore / interactive / clickable / drill into components" | `interactive_report.py` |
+| "visualizer / dashboard / app-like / simulate a flow / demo I can present" | `visualizer.py` (`--serve` for the live agent loop) |
 
 **Language support:** Java, **Kotlin**, Python, C/C++, **TypeScript/JavaScript**
 (`.ts/.tsx/.js/.jsx`), and **Go** are supported (`--language kotlin` /
@@ -298,32 +242,24 @@ the dependencies.
 
 ---
 
-## Architecture guardrail (arcade-guard)
+## Architecture guardrail (arcade-guard) — see `references/guard.md`
 
 For keeping an AI agent (or a human) aligned to an **intended** architecture
-*while building* — not just analyzing after the fact. The intended architecture
+*while building*, rather than analyzing after the fact. The intended architecture
 is an author-written `architecture.spec.json` (components by path glob, layers,
-allowed/forbidden dependencies, decay budgets). Conformance is **deterministic**.
+allowed/forbidden dependencies, decay budgets); conformance is **deterministic**.
+Two surfaces over the same engine (`scripts/_spec.py`): the `scripts/guard.py`
+CLI (`init`, `check`, `propose`, `preview`, `explain`, `remediate`) and the
+`scripts/guard_mcp.py` MCP server.
 
-Two surfaces, same engine (`scripts/_spec.py`):
-- **CLI** — `scripts/guard.py <cmd> <source>`:
-  - `init --template hexagonal|layered|clean|mvc` — scaffold a spec.
-  - `check` — verdict PASS/WARN/FAIL + violations + fixes; `--fail-on error`
-    exits ≠0 (pre-commit / CI gate).
-  - `propose --intent "..."` — **proactive**: where should a new thing live + what
-    may it depend on. Call *before* writing code.
-  - `preview --from A --to B` — would that dependency be allowed?
-  - `explain --violation <id>` / `remediate` — why + ranked fixes.
-- **MCP server** — `scripts/guard_mcp.py` exposes `check_architecture`,
-  `propose_placement`, `preview_impact`, `explain_violation`, `remediate` to any
-  MCP agent. Run with the venv interpreter + `ARCADE_AGENT_HOME` set.
+Reach for it on "enforce architecture", "guardrail for the agent", "keep the AI
+from breaking the architecture", "stop architectural drift as we build", or
+setting up an architecture gate. The habit to teach an agent: **propose → build →
+preview before new deps → check, fix any ERROR**. Enforcement is tiered —
+advisory in-loop, blocking at commit/CI (see `assets/guard-*`). Read
+`references/guard.md` for the commands; full design + status in `GUARDRAIL_PLAN.md`.
 
-Use it when the user wants to "enforce architecture", "guardrail for the agent",
-"keep the AI from breaking the architecture", "stop architectural drift as we
-build", or set up an architecture gate. The habit to teach an agent: **propose →
-build → preview before new deps → check, fix any ERROR**. Enforcement is tiered —
-advisory in-loop, blocking at commit/CI (see `assets/guard-*`). Full design +
-status: `GUARDRAIL_PLAN.md`.
+---
 
 ## Interpreting the output for the user
 
