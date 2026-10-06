@@ -2,7 +2,7 @@
 
 A [Claude Code](https://claude.com/claude-code) skill that recovers and
 **visualizes the architecture** of a software codebase using
-[arcade-agent](https://github.com/lemduc/arcade-agent) — the Python successor to
+[arcade-agent](https://github.com/arcade-agent/arcade-agent) — the Python successor to
 USC's ARCADE workbench (Architecture Recovery, Change, And Decay Evaluator).
 
 Point it at a Java / Kotlin / Python / C / C++ / TypeScript / JavaScript / Go project
@@ -19,13 +19,13 @@ languages — and the contrast between a clean codebase and a tangled one.
 
 | Target | Language | Entities | Edges | Components | Smells | RCI | BasicMQ | Report |
 |--------|:--------:|---------:|------:|-----------:|-------:|----:|--------:|--------|
-| [arcade-agent](https://github.com/lemduc/arcade-agent) (self) | Python | 200 | 115 | 5 | 3 | **0.85** | **0.79** | [HTML](examples/arcade-agent-python.html) · [live](https://lemduc.github.io/arcade-analyze-skill/arcade-agent-python.html) |
+| [arcade-agent](https://github.com/arcade-agent/arcade-agent) (self) | Python | 200 | 115 | 5 | 3 | **0.85** | **0.79** | [HTML](examples/arcade-agent-python.html) · [live](https://lemduc.github.io/arcade-analyze-skill/arcade-agent-python.html) |
 | [arcade_core](https://github.com/usc-softarch/arcade_core) | Java | 1078 | 3520 | 13 | 6 | 0.40 | 0.26 | [HTML](examples/arcade-core-java.html) · [live](https://lemduc.github.io/arcade-analyze-skill/arcade-core-java.html) |
 
 <sub>Figures are from the original June 2026 demo run against arcade-agent 0.1.0;
 re-run `examples/run_demo.sh` to refresh them. The last column was labelled
 TurboMQ before arcade-agent
-[#26](https://github.com/lemduc/arcade-agent/pull/26) — at the time the two
+[#26](https://github.com/arcade-agent/arcade-agent/pull/26) — at the time the two
 metrics returned an identical number, and the normalized one is BasicMQ.</sub>
 
 **Read the numbers:** arcade-agent (Python) scores high on RCI/BasicMQ — cohesive,
@@ -113,7 +113,7 @@ pip install arcade-agent
 ```
 
 Alternatively, for development against a
-[checkout](https://github.com/lemduc/arcade-agent): create its virtualenv
+[checkout](https://github.com/arcade-agent/arcade-agent): create its virtualenv
 (`pip install -e ".[dev]"`) and tell the skill where it lives — the scripts
 check `--arcade-home`, then `$ARCADE_AGENT_HOME`, and a configured checkout
 wins over a pip install:
@@ -128,7 +128,7 @@ Then install the skill itself, either way:
 marketplace — inside Claude Code run:
 
 ```
-/plugin marketplace add lemduc/arcade-analyze-skill
+/plugin marketplace add arcade-agent/arcade-analyze-skill
 /plugin install arcade-analyze@arcade-tools
 ```
 
@@ -139,7 +139,7 @@ the latest version.
 (the symlink name becomes the skill name `arcade-analyze`):
 
 ```bash
-git clone https://github.com/lemduc/arcade-analyze-skill.git
+git clone https://github.com/arcade-agent/arcade-analyze-skill.git
 ln -sfn "$(pwd)/arcade-analyze-skill" ~/.claude/skills/arcade-analyze
 ```
 
