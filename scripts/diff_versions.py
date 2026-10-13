@@ -135,10 +135,10 @@ def _build_markdown(repo_name: str, frm: dict, to: dict, drift: dict,
     if entities_moved:
         lines.append(f"- **{entities_moved}** entity movement(s) between components (refactors)")
         any_change = True
-    if s["possible_merges"]:
+    if s.get("possible_merges"):
         lines.append(f"- **{s['possible_merges']}** possible merge(s)")
         any_change = True
-    if s["possible_splits"]:
+    if s.get("possible_splits"):
         lines.append(f"- **{s['possible_splits']}** possible split(s)")
         any_change = True
     if not any_change:
